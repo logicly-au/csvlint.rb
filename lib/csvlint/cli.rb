@@ -58,7 +58,7 @@ module Csvlint
 
       def get_schema(schema)
         begin
-          schema = Csvlint::Schema.load_from_uri(schema, false)
+          schema = Csvlint::Schema.load_from_uri(schema, options[:dump_errors])
         rescue Csvlint::Csvw::MetadataError => e
           return_error "invalid metadata: #{e.message}#{" at " + e.path if e.path}"
         rescue OpenURI::HTTPError, Errno::ENOENT

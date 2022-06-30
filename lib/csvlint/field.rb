@@ -164,30 +164,35 @@ module Csvlint
           'http://www.w3.org/2001/XMLSchema#dateTime' => lambda do |value, constraints|
             date_pattern = constraints["datePattern"] || "%Y-%m-%dT%H:%M:%SZ"
             d = DateTime.strptime(value, date_pattern)
+            date_pattern = constraints["dateCheckPattern"] || date_pattern
             raise ArgumentError unless d.strftime(date_pattern) == value
             d
           end,
           'http://www.w3.org/2001/XMLSchema#date' => lambda do |value, constraints|
             date_pattern = constraints["datePattern"] || "%Y-%m-%d"
             d = Date.strptime(value, date_pattern)
+            date_pattern = constraints["dateCheckPattern"] || date_pattern
             raise ArgumentError unless d.strftime(date_pattern) == value
             d
           end,
           'http://www.w3.org/2001/XMLSchema#time' => lambda do |value, constraints|
             date_pattern = constraints["datePattern"] || "%H:%M:%S"
             d = DateTime.strptime(value, date_pattern)
+            date_pattern = constraints["dateCheckPattern"] || date_pattern
             raise ArgumentError unless d.strftime(date_pattern) == value
             d
           end,
           'http://www.w3.org/2001/XMLSchema#gYear' => lambda do |value, constraints|
             date_pattern = constraints["datePattern"] || "%Y"
             d = Date.strptime(value, date_pattern)
+            date_pattern = constraints["dateCheckPattern"] || date_pattern
             raise ArgumentError unless d.strftime(date_pattern) == value
             d
           end,
           'http://www.w3.org/2001/XMLSchema#gYearMonth' => lambda do |value, constraints|
             date_pattern = constraints["datePattern"] || "%Y-%m"
             d = Date.strptime(value, date_pattern)
+            date_pattern = constraints["dateCheckPattern"] || date_pattern
             raise ArgumentError unless d.strftime(date_pattern) == value
             d
           end,

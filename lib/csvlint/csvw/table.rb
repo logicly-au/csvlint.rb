@@ -60,8 +60,11 @@ module Csvlint
           end
         end unless columns.empty?
         if validate
+          # Every value was validated above; with invalid values becoming a Hash with key :invalid and the original value.
+          # Use the value rather than the Hash when building Primary and Foreign key lookups for consistent error messages.
           unless @primary_key.nil?
-            key = @primary_key.map { |column| column.validate(values[column.number - 1], row) }
+            key = @primary_key.map { |column| values[column.number - 1] }
+                              .map { |value| value.instance_of?(Hash) && value.has_key?(:invalid) ? value[:invalid] : value }
             colnum = if primary_key.length == 1 then primary_key[0].number else nil end
             build_errors(:duplicate_key, :schema, row, colnum, key, @primary_key_values[key]) if @primary_key_values.include?(key)
             @primary_key_values[key] = row
@@ -71,6 +74,7 @@ module Csvlint
           @foreign_key_references.each do |foreign_key|
             referenced_columns = foreign_key["referenced_columns"]
             key = referenced_columns.map{ |column| values[column.number - 1] }
+                                    .map{ |value| value.instance_of?(Hash) && value.has_key?(:invalid) ? value[:invalid] : value }
             known_values = @foreign_key_reference_values[foreign_key] ||= {}
             (known_values[key] ||= []) << row
           end
@@ -80,6 +84,7 @@ module Csvlint
           @foreign_keys.each do |foreign_key|
             referencing_columns = foreign_key["referencing_columns"]
             key = referencing_columns.map{ |column| values[column.number - 1] }
+                                     .map{ |value| value.instance_of?(Hash) && value.has_key?(:invalid) ? value[:invalid] : value }
             known_values = @foreign_key_values[foreign_key] ||= {}
 
             if referencing_columns.length == 1 && !referencing_columns[0].separator.nil?

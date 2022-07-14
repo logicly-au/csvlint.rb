@@ -46,7 +46,7 @@ module Csvlint
           # If the source isn't a URL, it's a file
           unless source =~ /^http(s)?/
             begin
-              source = File.new( source )
+              source = File.new(source, "r:bom|utf-8")
             rescue Errno::ENOENT
               return_error "#{source} not found"
             end

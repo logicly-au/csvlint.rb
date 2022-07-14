@@ -184,7 +184,7 @@ module Csvlint
       @csv_options[:encoding] = @encoding
 
       begin
-        row = LineCSV.parse_line(stream, @csv_options)
+        row = LineCSV.parse_line(stream, **@csv_options)
       rescue LineCSV::MalformedCSVError => e
         build_exception_messages(e, stream, current_line)
       end

@@ -170,7 +170,7 @@ module Csvlint
           col: error.column
         }
 
-        if error.column && @schema && @schema.class == Csvlint::Schema && @schema.fields[error.column - 1] != nil
+        if error.column && @schema && @schema.class == Csvlint::Schema && @schema.fields[error.column - 1] != nil && error.row != 1
           field = @schema.fields[error.column - 1]
           h[:header] = field.name
           h[:constraints] = Hash[field.constraints.map {|k,v| [k.underscore, v] }]

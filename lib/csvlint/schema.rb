@@ -71,7 +71,10 @@ module Csvlint
           # Column has good name. Check if it's in the right position.
           expected_index = field_position[found_field]
           if expected_index != found_index
-            build_errors(:known_header_wrong_column, :schema, 1, found_index+1, found_field, {})
+            # Include both columns in the error, so we can sensibly match it up
+            #   error.col   = expected column
+            #   error.value = found column
+            build_errors(:known_header_wrong_column, :schema, 1, expected_index+1, found_index+1)
           end
         else
           # Column name not in schema
@@ -80,9 +83,11 @@ module Csvlint
       end
 
       found_fields = header.to_set
-      @fields.map{ |f| f.name }.each do |expected_field|
+      @fields.map.with_index{ |f, i| [f.name, i+1] }.each do |expected_field, col|
         if not found_fields === expected_field
-          build_errors(:missing_header, :schema, 1, nil, expected_field, {})
+          # Column not found at all. The column specified is where we expected
+          # it to be.
+          build_errors(:missing_header, :schema, 1, col, expected_field)
         end
       end
 

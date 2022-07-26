@@ -59,6 +59,7 @@ module Csvlint
         "Illegal quoting" => :whitespace,
         "Unclosed quoted field" => :unclosed_quote,
         "Unquoted fields do not allow \\r or \\n" => :line_breaks,
+        "Unquoted fields do not allow new line <\"\\r\">" => :line_breaks,
     }
 
     def initialize(source, dialect = {}, schema = nil, options = {})

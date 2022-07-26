@@ -167,7 +167,8 @@ module Csvlint
           type: error.type,
           category: error.category,
           row: error.row,
-          col: error.column
+          col: error.column,
+          value: error.content
         }
 
         if error.column && @schema && @schema.class == Csvlint::Schema && @schema.fields[error.column - 1] != nil && error.row != 1

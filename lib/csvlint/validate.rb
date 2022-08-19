@@ -58,6 +58,7 @@ module Csvlint
         "Missing or stray quote" => :stray_quote,
         "Illegal quoting" => :whitespace,
         "Unclosed quoted field" => :unclosed_quote,
+        "Any value after quoted field isn't allowed" => :unclosed_quote,
         "Unquoted fields do not allow \\r or \\n" => :line_breaks,
     }
 
@@ -184,9 +185,9 @@ module Csvlint
       @csv_options[:encoding] = @encoding
 
       begin
-        row = LineCSV.parse_line(stream, @csv_options)
+        row = LineCSV.parse_line(stream, **@csv_options)
       rescue LineCSV::MalformedCSVError => e
-        build_exception_messages(e, stream, current_line)
+        build_exception_messages(e, stream, current_line) unless e.message.include?("UTF") && @reported_invalid_encoding
       end
 
       if row
@@ -440,6 +441,9 @@ module Csvlint
         when StringIO
           return
         when File
+          # Upstream changes for Ruby3
+          # uri_parser = URI::Parser.new
+          # @source_url = "file:#{uri_parser.escape(File.expand_path(@source))}"
           @source_url = FileUrl.url(@source)
         else
           @source_url = @source
@@ -455,7 +459,7 @@ module Csvlint
       if @source_url =~ /^http(s)?/
         begin
           well_known_uri = URI.join(@source_url, "/.well-known/csvm")
-          paths = open(well_known_uri).read.split("\n")
+          paths = URI.open(well_known_uri.to_s).read.split("\n")
         rescue OpenURI::HTTPError, URI::BadURIError
         end
       end

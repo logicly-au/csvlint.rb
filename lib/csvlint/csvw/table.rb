@@ -64,39 +64,26 @@ module Csvlint
           unless @primary_key.nil?
             key = @primary_key.map { |column| column.validate(values[column.number - 1], row) }
             colnum = primary_key.length == 1 ? primary_key[0].number : nil
-            build_errors(:duplicate_key, :schema, row, colnum, key, @primary_key_values[key]) if @primary_key_values.include?(key)
+            build_errors(:duplicate_key, :schema, row, colnum, key.join(","), @primary_key_values[key]) if @primary_key_values.include?(key)
             @primary_key_values[key] = row
           end
           # build a record of the unique values that are referenced by foreign keys from other tables
           # so that later we can check whether those foreign keys reference these values
           @foreign_key_references.each do |foreign_key|
             referenced_columns = foreign_key["referenced_columns"]
-            key = referenced_columns.map { |column| values[column.number - 1] }
-            known_values = @foreign_key_reference_values[foreign_key] ||= {}
-            (known_values[key] ||= []) << row
+            key = referenced_columns.map { |column| column.validate(values[column.number - 1], row) }
+            known_values = @foreign_key_reference_values[foreign_key] = @foreign_key_reference_values[foreign_key] || {}
+            known_values[key] = known_values[key] || []
+            known_values[key] << row
           end
           # build a record of the references from this row to other tables
           # we can't check yet whether these exist in the other tables because
           # we might not have parsed those other tables
           @foreign_keys.each do |foreign_key|
             referencing_columns = foreign_key["referencing_columns"]
-            key = referencing_columns.map { |column| values[column.number - 1] }
-            known_values = @foreign_key_values[foreign_key] ||= {}
-
-            if referencing_columns.length == 1 && !referencing_columns[0].separator.nil?
-              # This case is for an array-valued column, where each value is a
-              # FK. The data will look like this:
-              #     [ [ "5", "7", "9" ] ]
-              # We want it like this:
-              #     [ ["5"], ["7"], ["9"] ]
-              if !key[0].nil?
-                key[0].each do |subkey|
-                  (known_values[[subkey]] ||= []) << row
-                end
-              end
-            else
-              (known_values[key] ||= []) << row
-            end
+            key = referencing_columns.map { |column| column.validate(values[column.number - 1], row) }
+            known_values = @foreign_key_values[foreign_key] = @foreign_key_values[foreign_key] || []
+            known_values << key unless known_values.include?(key)
           end
         end
         valid?
@@ -117,22 +104,14 @@ module Csvlint
 
       def validate_foreign_key_references(foreign_key, remote_url, remote)
         reset
-        local = @foreign_key_reference_values[foreign_key] || {}
-        context = {
-          "from" => {"url" => remote_url.to_s.split("/")[-1], "columns" => foreign_key["columnReference"]},
-          "to" => {"url" => @url.to_s.split("/")[-1], "columns" => foreign_key["reference"]["columnReference"]}
-        }
+        local = @foreign_key_reference_values[foreign_key]
+        context = {"from" => {"url" => remote_url.to_s.split("/")[-1], "columns" => foreign_key["columnReference"]}, "to" => {"url" => @url.to_s.split("/")[-1], "columns" => foreign_key["reference"]["columnReference"]}}
         colnum = foreign_key["referencing_columns"].length == 1 ? foreign_key["referencing_columns"][0].number : nil
-
-        remote.each do |key, rows|
-          if !(local[key])
-            rows.each do |row|
-              build_errors(:unmatched_foreign_key_reference, :schema, row, colnum, key, context)
-            end
-          elsif local[key].length > 1
-            rows.each do |row|
-              build_errors(:multiple_matched_rows, :schema, row, colnum, key, context)
-            end
+        remote.each_with_index do |r, i|
+          if local[r]
+            build_errors(:multiple_matched_rows, :schema, i + 1, colnum, r, context) if local[r].length > 1
+          else
+            build_errors(:unmatched_foreign_key_reference, :schema, i + 1, colnum, r, context)
           end
         end
         valid?
@@ -166,7 +145,6 @@ module Csvlint
         table_schema = table_properties["tableSchema"] || inherited_properties["tableSchema"]
         column_names = []
         foreign_keys = []
-        primary_key = nil
         if table_schema
           unless table_schema["columns"].instance_of? Array
             table_schema["columns"] = []
@@ -193,42 +171,35 @@ module Csvlint
             end
           end
 
-          primary_key = table_schema["primaryKey"]
           primary_key_columns = []
           primary_key_valid = true
-          if primary_key
-            primary_key.each do |reference|
-              i = column_names.index(reference)
-              if i
-                primary_key_columns << columns[i]
-              else
-                warnings << Csvlint::ErrorMessage.new(:invalid_column_reference, :metadata, nil, nil, "primaryKey: #{reference}", nil)
-                primary_key_valid = false
-              end
+          table_schema["primaryKey"]&.each do |reference|
+            i = column_names.index(reference)
+            if i
+              primary_key_columns << columns[i]
+            else
+              warnings << Csvlint::ErrorMessage.new(:invalid_column_reference, :metadata, nil, nil, "primaryKey: #{reference}", nil)
+              primary_key_valid = false
             end
           end
 
           foreign_keys = table_schema["foreignKeys"]
-          if foreign_keys
-            foreign_keys.each_with_index do |foreign_key, i|
-              foreign_key_columns = []
-              foreign_key["columnReference"].each do |reference|
-                i = column_names.index(reference)
-                raise Csvlint::Csvw::MetadataError.new("$.tables[?(@.url = '#{table_desc["url"]}')].tableSchema.foreignKeys[#{i}].columnReference"), "foreignKey references non-existant column" unless i
-                foreign_key_columns << columns[i]
-              end
-              foreign_key["referencing_columns"] = foreign_key_columns
+          foreign_keys&.each_with_index do |foreign_key, i|
+            foreign_key_columns = []
+            foreign_key["columnReference"].each do |reference|
+              i = column_names.index(reference)
+              raise Csvlint::Csvw::MetadataError.new("$.tables[?(@.url = '#{table_desc["url"]}')].tableSchema.foreignKeys[#{i}].columnReference"), "foreignKey references non-existant column" unless i
+              foreign_key_columns << columns[i]
             end
+            foreign_key["referencing_columns"] = foreign_key_columns
           end
 
           row_titles = table_schema["rowTitles"]
           row_title_columns = []
-          if row_titles
-            row_titles.each do |row_title|
-              i = column_names.index(row_title)
-              raise Csvlint::Csvw::MetadataError.new("$.tables[?(@.url = '#{table_desc["url"]}')].tableSchema.rowTitles[#{i}]"), "rowTitles references non-existant column" unless i
-              row_title_columns << columns[i]
-            end
+          row_titles&.each do |row_title|
+            i = column_names.index(row_title)
+            raise Csvlint::Csvw::MetadataError.new("$.tables[?(@.url = '#{table_desc["url"]}')].tableSchema.rowTitles[#{i}]"), "rowTitles references non-existant column" unless i
+            row_title_columns << columns[i]
           end
 
         end

@@ -17,11 +17,9 @@ module Csvlint
 
       def from_json_table(uri, json)
         fields = []
-        if json["fields"]
-          json["fields"].each do |field_desc|
-            fields << Csvlint::Field.new(field_desc["name"], field_desc["constraints"],
-              field_desc["title"], field_desc["description"])
-          end
+        json["fields"]&.each do |field_desc|
+          fields << Csvlint::Field.new(field_desc["name"], field_desc["constraints"],
+            field_desc["title"], field_desc["description"])
         end
         Schema.new(uri, fields, json["title"], json["description"])
       end
@@ -68,22 +66,22 @@ module Csvlint
       reset
 
       field_position = @fields.map.with_index { |f, i| [f.name, i] }.to_h
-      header.each_with_index do |found_field, found_index|
+      header.each_with_index do |found_field,found_index|
         if field_position.key?(found_field)
           # Column has good name. Check if it's in the right position.
           expected_index = field_position[found_field]
           if expected_index != found_index
-            build_errors(:known_header_wrong_column, :schema, 1, found_index + 1, found_field, {})
+            build_errors(:known_header_wrong_column, :schema, 1, found_index+1, found_field, {})
           end
         else
           # Column name not in schema
-          build_errors(:unknown_header, :schema, 1, found_index + 1, found_field, {})
+          build_errors(:unknown_header, :schema, 1, found_index+1, found_field, {})
         end
       end
 
       found_fields = header.to_set
-      @fields.map { |f| f.name }.each do |expected_field|
-        if !(found_fields === expected_field)
+      @fields.map{ |f| f.name }.each do |expected_field|
+        if not found_fields === expected_field
           build_errors(:missing_header, :schema, 1, nil, expected_field, {})
         end
       end

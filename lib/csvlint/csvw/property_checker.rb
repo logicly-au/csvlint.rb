@@ -456,6 +456,7 @@ module Csvlint
             # schema = JSON.parse( URI.open(schema_ref).read )
             schema_ref = FileUrl.file(schema_url)
             schema = JSON.parse(open(schema_ref).read)
+            #
             schema["@id"] = schema["@id"] ? URI.join(schema_url, schema["@id"]).to_s : schema_url
             if schema["@context"]
               if schema["@context"].instance_of?(Array) && schema["@context"].length > 1

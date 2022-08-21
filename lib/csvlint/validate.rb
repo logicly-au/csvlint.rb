@@ -283,8 +283,8 @@ module Csvlint
                 warn_if_unsuccessful = true
                 build_warnings(:schema_mismatch, :context, nil, nil, @source_url, schema)
               end
-            rescue OpenURI::HTTPError
             end
+          rescue OpenURI::HTTPError
           end
         end
       end

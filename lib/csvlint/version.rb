@@ -1,3 +1,3 @@
 module Csvlint
-  VERSION = "0.4.0.4"
+  VERSION = "1.0.0.1"
 end

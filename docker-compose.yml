@@ -1,7 +1,9 @@
 version: "3"
 services:
   csvlint.rb:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.logicly
     command: rake
     volumes:
       - $PWD:/code

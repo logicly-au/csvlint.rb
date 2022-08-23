@@ -1,14 +1,16 @@
+require "addressable"
+
 module Csvlint
   module FileUrl
     # Convert a path to an absolute file:// uri
     def self.url(path)
-      URI.encode_www_form_component(File.expand_path(path).gsub(/^\/*/, "file:///"))
+      Addressable::URI.convert_path(File.expand_path(path)).to_s
     end
 
     # Convert an file:// uri to a File
     def self.file(uri)
       if /^file:/.match?(uri.to_s)
-        uri = URI.decode_www_form_component(uri)
+        uri = Addressable::URI.unencode(uri)
         uri = uri.gsub(/^file:\/*/, "/")
         File.new(uri)
       else

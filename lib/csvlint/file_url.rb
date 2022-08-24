@@ -10,7 +10,7 @@ module Csvlint
     # Convert an file:// uri to a File
     def self.file(uri)
       if /^file:/.match?(uri.to_s)
-        uri = Addressable::URI.unencode(uri)
+        uri = Addressable::URI.unencode(Addressable::URI.parse(uri))
         uri = uri.gsub(/^file:\/*/, "/")
         File.new(uri)
       else

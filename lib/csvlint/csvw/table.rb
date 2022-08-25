@@ -89,6 +89,21 @@ module Csvlint
         valid?
       end
 
+      def cartesian_product_foreign_key_values(values)
+        # If no column has a separator (no values are arrays), return [values]
+        return [values] if !values.any? {|x| x.instance_of?(Array)}
+
+        # wrap nil values in an array so we can use product()
+        # otherwise it'd reduce to an empty array
+        wrapped = values.map{|x| x.nil? ? [nil] : x}
+        # convert first column's values to individual arrays to start the cartesian product
+        # i.e. 'a' becomes [['a']], [1,2] becomes [[1],[2]]
+        # then reduce + ( product + flatten ) to construct cartesian product
+        # of compound + multi-value keys to foreign tables
+        first = [*wrapped.shift].map{|x|[x]}
+        wrapped.reduce(first){ |l,r| l.product(r).map{ |x| x.flatten } }
+      end
+
       def validate_foreign_keys
         reset
         @foreign_keys.each do |foreign_key|

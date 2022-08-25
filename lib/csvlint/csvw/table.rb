@@ -81,12 +81,32 @@ module Csvlint
           # we might not have parsed those other tables
           @foreign_keys.each do |foreign_key|
             referencing_columns = foreign_key["referencing_columns"]
-            key = referencing_columns.map { |column| column.validate(values[column.number - 1], row) }
-            known_values = @foreign_key_values[foreign_key] = @foreign_key_values[foreign_key] || []
-            known_values << key unless known_values.include?(key)
+            known_values = @foreign_key_values[foreign_key] = @foreign_key_values[foreign_key] || {}
+            # handle compound foreign keys and FK columns with a separator
+            keys = cartesian_product_foreign_key_values(referencing_columns.map {|column| values[column.number - 1]})
+            keys.each do |key|
+              known_values[key] = known_values[key] || []
+              # also track row number for error reporting
+              known_values[key] << row
+            end
           end
         end
         valid?
+      end
+
+      def cartesian_product_foreign_key_values(values)
+        # If no column has a separator (no values are arrays), return [values]
+        return [values] if !values.any? {|x| x.instance_of?(Array)}
+
+        # wrap nil values in an array so we can use product()
+        # otherwise it'd reduce to an empty array
+        wrapped = values.map{|x| x.nil? ? [nil] : x}
+        # convert first column's values to individual arrays to start the cartesian product
+        # i.e. 'a' becomes [['a']], [1,2] becomes [[1],[2]]
+        # then reduce + ( product + flatten ) to construct cartesian product
+        # of compound + multi-value keys to foreign tables
+        first = [*wrapped.shift].map{|x|[x]}
+        wrapped.reduce(first){ |l,r| l.product(r).map{ |x| x.flatten } }
       end
 
       def validate_foreign_keys
@@ -107,11 +127,17 @@ module Csvlint
         local = @foreign_key_reference_values[foreign_key]
         context = {"from" => {"url" => remote_url.to_s.split("/")[-1], "columns" => foreign_key["columnReference"]}, "to" => {"url" => @url.to_s.split("/")[-1], "columns" => foreign_key["reference"]["columnReference"]}}
         colnum = foreign_key["referencing_columns"].length == 1 ? foreign_key["referencing_columns"][0].number : nil
-        remote.each_with_index do |r, i|
+        remote.each_key do |r|
           if local[r]
-            build_errors(:multiple_matched_rows, :schema, i + 1, colnum, r, context) if local[r].length > 1
+            if local[r].length > 1
+              remote[r].each do |row|
+                build_errors(:multiple_matched_rows, :schema, row, colnum, r, context)
+              end
+            end
           else
-            build_errors(:unmatched_foreign_key_reference, :schema, i + 1, colnum, r, context)
+            remote[r].each do |row|
+              build_errors(:unmatched_foreign_key_reference, :schema, row, colnum, r, context)
+            end
           end
         end
         valid?

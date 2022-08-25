@@ -64,14 +64,14 @@ module Csvlint
           unless @primary_key.nil?
             key = @primary_key.map { |column| column.validate(values[column.number - 1], row) }
             colnum = primary_key.length == 1 ? primary_key[0].number : nil
-            build_errors(:duplicate_key, :schema, row, colnum, key.join(","), @primary_key_values[key]) if @primary_key_values.include?(key)
+            build_errors(:duplicate_key, :schema, row, colnum, key, @primary_key_values[key]) if @primary_key_values.include?(key)
             @primary_key_values[key] = row
           end
           # build a record of the unique values that are referenced by foreign keys from other tables
           # so that later we can check whether those foreign keys reference these values
           @foreign_key_references.each do |foreign_key|
             referenced_columns = foreign_key["referenced_columns"]
-            key = referenced_columns.map { |column| column.validate(values[column.number - 1], row) }
+            key = referenced_columns.map { |column| values[column.number - 1] }
             known_values = @foreign_key_reference_values[foreign_key] = @foreign_key_reference_values[foreign_key] || {}
             known_values[key] = known_values[key] || []
             known_values[key] << row
@@ -112,7 +112,7 @@ module Csvlint
       def validate_foreign_keys
         reset
         @foreign_keys.each do |foreign_key|
-          local = @foreign_key_values[foreign_key]
+          local = @foreign_key_values[foreign_key] || {}
           next if local.nil?
           remote_table = foreign_key["referenced_table"]
           remote_table.validate_foreign_key_references(foreign_key, @url, local)

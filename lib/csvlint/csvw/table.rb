@@ -124,7 +124,7 @@ module Csvlint
 
       def validate_foreign_key_references(foreign_key, remote_url, remote)
         reset
-        local = @foreign_key_reference_values[foreign_key]
+        local = @foreign_key_reference_values[foreign_key] || {}
         context = {"from" => {"url" => remote_url.to_s.split("/")[-1], "columns" => foreign_key["columnReference"]}, "to" => {"url" => @url.to_s.split("/")[-1], "columns" => foreign_key["reference"]["columnReference"]}}
         colnum = foreign_key["referencing_columns"].length == 1 ? foreign_key["referencing_columns"][0].number : nil
         remote.each_key do |r|

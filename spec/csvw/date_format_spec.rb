@@ -14,6 +14,15 @@ describe Csvlint::Csvw::DateFormat do
     expect(format.parse("22/03/2015")).to eq(nil)
   end
 
+  it "should parse times that match H:mm correctly" do
+    format = Csvlint::Csvw::DateFormat.new("H:mm")
+    expect(format.parse("2:34")).to eql({hour: 2, minute: 34, string: "02:34:00", dateTime: DateTime.new(0, 1, 1, 2, 34, 0.0, "+00:00")})
+    expect(format.parse("12:34")).to eql({hour: 12, minute: 34, string: "12:34:00", dateTime: DateTime.new(0, 1, 1, 12, 34, 0.0, "+00:00")})
+    expect(format.parse("24:00")).to eql({hour: 24, minute: 0, string: "24:00:00", dateTime: DateTime.new(0, 1, 2, 0, 0, 0.0, "+00:00")})
+    expect(format.parse("22/03/2015")).to eq(nil)
+    expect(format.parse("12:34 pm")).to eq(nil)
+  end
+
   it "should parse times that match HH:mm:ss.SSS correctly" do
     format = Csvlint::Csvw::DateFormat.new("HH:mm:ss.SSS")
     expect(format.parse("12:34:56")).to eql({hour: 12, minute: 34, second: 56.0, string: "12:34:56", dateTime: DateTime.new(0, 1, 1, 12, 34, 56.0, "+00:00")})

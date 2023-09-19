@@ -179,7 +179,7 @@ module Csvlint
         "HH:mm:ss" => Regexp.new("^#{FIELDS["HH"]}:#{FIELDS["mm"]}:(?<second>#{FIELDS["ss"]})$"),
         "HHmmss" => Regexp.new("^#{FIELDS["HH"]}#{FIELDS["mm"]}(?<second>#{FIELDS["ss"]})$"),
         "HH:mm" => Regexp.new("^#{FIELDS["HH"]}:#{FIELDS["mm"]}$"),
-        "H:mm" => Regexp.new("^#{FIELDS["H"]}:#{FIELDS["mm"]}|(?<hour>24):(?<minute>00)$"),
+        "H:mm" => Regexp.new("^(#{FIELDS["H"]}:#{FIELDS["mm"]}|(?<hour>24):(?<minute>00))$"),
         "HHmm" => Regexp.new("^#{FIELDS["HH"]}#{FIELDS["mm"]}$")
       }
 

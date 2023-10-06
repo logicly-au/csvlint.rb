@@ -5,6 +5,7 @@ require "set"
 require "tempfile"
 require "typhoeus"
 
+require "active_support"
 require "active_support/core_ext/date/conversions"
 require "active_support/core_ext/time/conversions"
 require "active_support/core_ext/object"

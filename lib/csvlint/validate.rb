@@ -419,7 +419,7 @@ module Csvlint
 
     def build_formats(row)
       row.each_with_index do |col, i|
-        next if col.nil? || col.empty?
+        next if col.nil? || col.empty? || @schema.is_missing_value(col)
         @formats[i] ||= Hash.new(0)
 
         format =

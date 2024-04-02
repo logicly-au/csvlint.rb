@@ -4,11 +4,12 @@ module Csvlint
 
     attr_reader :uri, :fields, :title, :description
 
-    def initialize(uri, fields = [], title = nil, description = nil)
+    def initialize(uri, fields = [], title = nil, description = nil, missing_values = [ "" ])
       @uri = uri
       @fields = fields
       @title = title
       @description = description
+      @missing_values = missing_values
       reset
     end
 
@@ -21,7 +22,9 @@ module Csvlint
           fields << Csvlint::Field.new(field_desc["name"], field_desc["constraints"],
             field_desc["title"], field_desc["description"])
         end
-        Schema.new(uri, fields, json["title"], json["description"])
+        # https://specs.frictionlessdata.io/table-schema/#missing-values
+        missing_values = json["missingValues"] || [ "" ]
+        Schema.new(uri, fields, json["title"], json["description"], missing_values)
       end
 
       def from_csvw_metadata(uri, json)
@@ -114,6 +117,7 @@ module Csvlint
 
       fields.each_with_index do |field, i|
         value = values[i] || ""
+        next if @missing_values.include? value
         result = field.validate_column(value, row, i + 1, all_errors)
         @errors += fields[i].errors
         @warnings += fields[i].warnings

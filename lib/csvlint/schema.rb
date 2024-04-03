@@ -117,8 +117,7 @@ module Csvlint
 
       fields.each_with_index do |field, i|
         value = values[i] || ""
-        next if is_missing_value(value)
-        result = field.validate_column(value, row, i + 1, all_errors)
+        result = field.validate_column(value, row, i + 1, @missing_values, all_errors)
         @errors += fields[i].errors
         @warnings += fields[i].warnings
       end

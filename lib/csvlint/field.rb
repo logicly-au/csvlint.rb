@@ -13,23 +13,23 @@ module Csvlint
       reset
     end
 
-    def validate_column(value, row = nil, column = nil, all_errors = [])
+    def validate_column(value, row = nil, column = nil, missing_values = [""], all_errors = [])
       reset
       unless all_errors.any? { |error| ((error.type == :invalid_regex) && (error.column == column)) }
         validate_regex(value, row, column, all_errors)
       end
-      validate_length(value, row, column)
+      validate_length(value, row, column, missing_values)
       validate_values(value, row, column)
-      parsed = validate_type(value, row, column)
+      parsed = validate_type(value, row, column, missing_values)
       validate_range(parsed, row, column) if !parsed.nil?
       valid?
     end
 
     private
 
-    def validate_length(value, row, column)
+    def validate_length(value, row, column, missing_values)
       if constraints["required"] == true
-        if value.nil? || value.length == 0
+        if value.nil? || missing_values.include?(value)
           build_errors(:missing_value, :schema, row, column, value,
             {"required" => true})
         end
@@ -84,8 +84,8 @@ module Csvlint
       end
     end
 
-    def validate_type(value, row, column)
-      if constraints["type"] && value != ""
+    def validate_type(value, row, column, missing_values)
+      if constraints["type"] && !missing_values.include?(value)
         parsed = convert_to_type(value)
         if parsed.nil?
           failed = {"type" => constraints["type"]}

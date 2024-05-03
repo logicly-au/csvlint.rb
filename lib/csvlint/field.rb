@@ -133,15 +133,13 @@ module Csvlint
       parsed
     end
 
-    def self.parse_date(value, format)
-      d = Date.strptime(value, format)
-      raise ArgumentError if Date._strptime(value, format).has_key?(:leftover)
-      d
-    end
-
-    def self.parse_datetime(value, format)
-      d = DateTime.strptime(value, format)
-      raise ArgumentError if DateTime._strptime(value, format).has_key?(:leftover)
+    def self.parse_datestr(dateclass, value, format)
+      # Some strptime formats accept leading space, we don't
+      raise ArgumentError if value =~ /^\s/
+      d = dateclass.strptime(value, format)
+      raise ArgumentError if dateclass._strptime(value, format).has_key?(:leftover)
+      # %Y will parse a two-digit year as exactly that, reject it
+      raise ArgumentError if d.year < 1000
       d
     end
 
@@ -186,19 +184,19 @@ module Csvlint
                                                               i
                                                             end,
       "http://www.w3.org/2001/XMLSchema#dateTime" => lambda do |value, constraints|
-                                                       parse_datetime(value, constraints["datePattern"] || "%Y-%m-%dT%H:%M:%SZ")
+                                                       parse_datestr(DateTime, value, constraints["datePattern"] || "%Y-%m-%dT%H:%M:%SZ")
                                                      end,
       "http://www.w3.org/2001/XMLSchema#date" => lambda do |value, constraints|
-                                                   parse_date(value, constraints["datePattern"] || "%Y-%m-%d")
+                                                   parse_datestr(Date, value, constraints["datePattern"] || "%Y-%m-%d")
                                                  end,
       "http://www.w3.org/2001/XMLSchema#time" => lambda do |value, constraints|
-                                                   parse_datetime(value, constraints["datePattern"] || "%H:%M:%S")
+                                                   parse_datestr(DateTime, value, constraints["datePattern"] || "%H:%M:%S")
                                                  end,
       "http://www.w3.org/2001/XMLSchema#gYear" => lambda do |value, constraints|
-                                                    parse_date(value, constraints["datePattern"] || "%Y")
+                                                    parse_datestr(Date, value, constraints["datePattern"] || "%Y")
                                                   end,
       "http://www.w3.org/2001/XMLSchema#gYearMonth" => lambda do |value, constraints|
-                                                         parse_date(value, constraints["datePattern"] || "%Y-%m")
+                                                         parse_datestr(Date, value, constraints["datePattern"] || "%Y-%m")
                                                        end
     }
   end

@@ -49,4 +49,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rdf-turtle"
   spec.add_development_dependency "standardrb"
   spec.add_development_dependency "appraisal"
+  spec.add_development_dependency "benchmark"
 end

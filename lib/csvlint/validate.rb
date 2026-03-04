@@ -341,7 +341,7 @@ module Csvlint
           build_warnings(:encoding, :context)
         end
       end
-      build_warnings(:encoding, :context) if @encoding != "UTF-8"
+      build_warnings(:encoding, :context) if !@encoding.nil? and @encoding != "UTF-8"
     end
 
     def check_mixed_linebreaks

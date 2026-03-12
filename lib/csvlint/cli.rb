@@ -2,7 +2,6 @@ require "csvlint"
 require "rainbow"
 require "active_support/json"
 require "json"
-require "pp"
 require "thor"
 
 require "active_support/inflector"
@@ -104,8 +103,8 @@ module Csvlint
         location = "#{error.row ? "Row" : "Column"}: #{location}"
       end
       output_string = "#{index + 1}. "
-      if error.column && @schema && @schema.instance_of?(Csvlint::Schema)
-        if @schema.fields[error.column - 1] != nil
+      if error.column && @schema&.instance_of?(Csvlint::Schema)
+        unless @schema.fields[error.column - 1].nil?
           output_string += "#{@schema.fields[error.column - 1].name}: "
         end
       end
@@ -177,7 +176,7 @@ module Csvlint
         value: error.content
       }
 
-      if error.column && @schema && @schema.instance_of?(Csvlint::Schema) && @schema.fields[error.column - 1] != nil && error.row != 1
+      if error.column && @schema&.instance_of?(Csvlint::Schema) && !@schema.fields[error.column - 1].nil? && error.row != 1
         field = @schema.fields[error.column - 1]
         h[:header] = field.name
         h[:constraints] = field.constraints.map { |k, v| [k.underscore, v] }.to_h

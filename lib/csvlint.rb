@@ -1,14 +1,10 @@
 require "csv"
 require "date"
 require "open-uri"
-require "set"
 require "tempfile"
 require "typhoeus"
 
-require "active_support"
-require "active_support/core_ext/date/conversions"
-require "active_support/core_ext/time/conversions"
-require "active_support/core_ext/object"
+require "active_support/all"
 require "open_uri_redirections"
 require "uri_template"
 

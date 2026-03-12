@@ -161,7 +161,7 @@ module Csvlint
         # If it's not a full line, then prepare to add it to the beginning of the next chunk
         @leading = line
       end
-    rescue ArgumentError => ae
+    rescue ArgumentError
       build_errors(:invalid_encoding, :structure, @current_line, nil, @current_line) unless @reported_invalid_encoding
       @current_line += 1
       @reported_invalid_encoding = true
@@ -169,13 +169,12 @@ module Csvlint
 
     def validate_line(input = nil, index = nil)
       @input = input
-      single_col = false
       line = index.present? ? index : 0
       @encoding = input.encoding.to_s
       report_line_breaks(line)
       parse_contents(input, line)
       @lambda&.call(self)
-    rescue ArgumentError => ae
+    rescue ArgumentError
       build_errors(:invalid_encoding, :structure, @current_line, nil, index) unless @reported_invalid_encoding
       @reported_invalid_encoding = true
     end
@@ -209,7 +208,7 @@ module Csvlint
           if @schema
             @schema.validate_row(row, current_line, all_errors, @source, @validate)
             @errors += @schema.errors
-            all_errors += @schema.errors
+            @schema.errors
             @warnings += @schema.warnings
           elsif !row.empty? && row.size != @expected_columns
             build_errors(:ragged_rows, :structure, current_line, nil, stream.to_s)
@@ -281,7 +280,6 @@ module Csvlint
               if schema.tables[@source_url]
                 @schema = schema
               else
-                warn_if_unsuccessful = true
                 build_warnings(:schema_mismatch, :context, nil, nil, @source_url, schema)
               end
             end
@@ -593,14 +591,14 @@ module Csvlint
       numeric: /\A[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?\z/,
       uri: /\Ahttps?:/,
       date_db: /\A\d{4,}-\d\d-\d\d\z/, # "12345-01-01"
-      date_long: /\A(?:#{Date::MONTHNAMES.join('|')}) [ \d]\d, \d{4,}\z/, # "January  1, 12345"
-      date_rfc822: /\A[ \d]\d (?:#{Date::ABBR_MONTHNAMES.join('|')}) \d{4,}\z/, # " 1 Jan 12345"
-      date_short: /\A[ \d]\d (?:#{Date::ABBR_MONTHNAMES.join('|')})\z/, # "1 Jan"
+      date_long: /\A(?:#{Date::MONTHNAMES.join("|")}) [ \d]\d, \d{4,}\z/, # "January  1, 12345"
+      date_rfc822: /\A[ \d]\d (?:#{Date::ABBR_MONTHNAMES.join("|")}) \d{4,}\z/, # " 1 Jan 12345"
+      date_short: /\A[ \d]\d (?:#{Date::ABBR_MONTHNAMES.join("|")})\z/, # "1 Jan"
       dateTime_db: /\A\d{4,}-\d\d-\d\d \d\d:\d\d:\d\d\z/, # "12345-01-01 00:00:00"
       dateTime_hms: /\A\d\d:\d\d:\d\d\z/, # "00:00:00"
       dateTime_iso8601: /\A\d{4,}-\d\d-\d\dT\d\d:\d\d:\d\dZ\z/, # "12345-01-01T00:00:00Z"
-      dateTime_long: /\A(?:#{Date::MONTHNAMES.join('|')}) \d\d, \d{4,} \d\d:\d\d\z/, # "January 01, 12345 00:00"
-      dateTime_short: /\A\d\d (?:#{Date::ABBR_MONTHNAMES.join('|')}) \d\d:\d\d\z/, # "01 Jan 00:00"
+      dateTime_long: /\A(?:#{Date::MONTHNAMES.join("|")}) \d\d, \d{4,} \d\d:\d\d\z/, # "January 01, 12345 00:00"
+      dateTime_short: /\A\d\d (?:#{Date::ABBR_MONTHNAMES.join("|")}) \d\d:\d\d\z/, # "01 Jan 00:00"
       dateTime_time: /\A\d\d:\d\d\z/ # "00:00"
     }.freeze
 
@@ -615,7 +613,7 @@ module Csvlint
     ANCHOR_REGEXP = Regexp.new("(?<anchor>\\s*anchor\\s*=\\s*\\<#{URI_REGEXP}\\>)")
     LINK_EXTENSION_REGEXP = Regexp.new("(?<link-extension>(?<param>#{TOKEN_REGEXP})(\\s*=\\s*(?<param-value>#{TOKEN_REGEXP}|#{QUOTED_STRING_REGEXP}))?)")
     LINK_PARAM_REGEXP = Regexp.new("(#{REL_REGEXP}|#{REV_REGEXP}|#{TITLE_REGEXP}|#{ANCHOR_REGEXP}|#{LINK_EXTENSION_REGEXP})")
-    LINK_HEADER_REGEXP = Regexp.new("\<#{URI_REGEXP}\>(\\s*;\\s*#{LINK_PARAM_REGEXP})*")
+    LINK_HEADER_REGEXP = Regexp.new("<#{URI_REGEXP}>(\\s*;\\s*#{LINK_PARAM_REGEXP})*")
     POSSIBLE_DATE_REGEXP = Regexp.new("\\A(\\d|\\s\\d#{Date::ABBR_MONTHNAMES.join("|")}#{Date::MONTHNAMES.join("|")})")
   end
 end

@@ -19,11 +19,11 @@ Gem::Specification.new do |spec|
 
   spec.files = `git ls-files`.split($/)
   spec.executables = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-  spec.test_files = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.required_ruby_version = [">= 2.5", "< 3.2"]
+  spec.required_ruby_version = [">= 2.5", "< 4.1"]
 
+  spec.add_dependency "csv"
   spec.add_dependency "rainbow"
   spec.add_dependency "open_uri_redirections"
   spec.add_dependency "activesupport"
@@ -34,6 +34,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "thor"
   spec.add_dependency "rack"
   spec.add_dependency "net-http-persistent"
+  spec.add_dependency "mutex_m" # For Ruby 3.4+
 
   spec.add_development_dependency "bundler", ">= 1.3"
   spec.add_development_dependency "rake"
@@ -45,12 +46,13 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "rspec-pride"
   spec.add_development_dependency "rspec-expectations"
-  spec.add_development_dependency "coveralls"
+  spec.add_development_dependency "coveralls_reborn"
   spec.add_development_dependency "byebug"
   spec.add_development_dependency "github_changelog_generator"
   spec.add_development_dependency "aruba"
   spec.add_development_dependency "rdf", "< 4.0"
   spec.add_development_dependency "rdf-turtle"
-  spec.add_development_dependency "henry"
   spec.add_development_dependency "standardrb"
+  spec.add_development_dependency "appraisal"
+  spec.add_development_dependency "benchmark"
 end

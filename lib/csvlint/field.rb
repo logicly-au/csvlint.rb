@@ -10,12 +10,13 @@ module Csvlint
       @uniques = Set.new
       @title = title
       @description = description
+      @regex = nil
       reset
     end
 
     def validate_column(value, row = nil, column = nil, all_errors = [])
       reset
-      unless all_errors.any? { |error| ((error.type == :invalid_regex) && (error.column == column)) }
+      unless all_errors.any? { |error| (error.type == :invalid_regex) && (error.column == column) }
         validate_regex(value, row, column, all_errors)
       end
       validate_length(value, row, column)
@@ -52,8 +53,7 @@ module Csvlint
       pattern = constraints["pattern"]
       if pattern
         begin
-          Regexp.new(pattern)
-          if !value.nil? && !value.match(constraints["pattern"])
+          if !value.nil? && !value.match(@regex ||= Regexp.new(pattern))
             build_errors(:pattern, :schema, row, column, value,
               {"pattern" => constraints["pattern"]})
           end

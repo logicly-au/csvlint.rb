@@ -179,7 +179,8 @@ module Csvlint
         col: error.column
       }
 
-      h[:raw_constraints] = error.constraints unless error.constraints.empty?
+      h[:error_constraints] = error.constraints unless error.constraints.empty?
+      h[:error_content] = error.content unless error.content.empty?
 
       if error.column && @schema && @schema.instance_of?(Csvlint::Schema) && @schema.fields[error.column - 1] != nil
         field = @schema.fields[error.column - 1]

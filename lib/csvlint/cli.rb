@@ -111,7 +111,7 @@ module Csvlint
       output_string += error.type.to_s
       output_string += ". #{location}" unless location.empty?
       output_string += ". #{error.content}" if error.content
-      output_string += ". #{error.constraints}" unless error.constraints.empty?
+      output_string += ". #{error.constraints}" unless error.constraints&.empty?
 
       puts Rainbow(output_string).color(color)
 

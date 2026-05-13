@@ -34,6 +34,14 @@ module Csvlint
 
     private
 
+    def has_error_content?(err_content)
+      return false               if err_content.nil?
+      return err.content.empty?  if err_content.respond_to?(:empty?)
+      # Defer to truthyness for other types. Ruby will give a true value
+      # for zero-valued numbers, but we may want this behaviour too?
+      err.content
+    end
+
     def read_source(source)
       if source.nil?
         # If no source is present, try reading from stdin
@@ -109,8 +117,8 @@ module Csvlint
         end
       end
       output_string += error.type.to_s
-      output_string += ". #{location}" unless location.empty?
-      output_string += ". #{error.content}" if error.content
+      output_string += ". #{location}"          unless location.empty?
+      output_string += ". #{error.content}"     if     has_error_content?(error.content)
       output_string += ". #{error.constraints}" unless error.constraints&.empty?
 
       puts Rainbow(output_string).color(color)
@@ -180,7 +188,7 @@ module Csvlint
       }
 
       h[:error_constraints] = error.constraints unless error.constraints&.empty?
-      h[:error_content] = error.content unless error.content&.empty?
+      h[:error_content]     = error.content     if     has_error_content?(error.content)
 
       if error.column && @schema && @schema.instance_of?(Csvlint::Schema) && @schema.fields[error.column - 1] != nil
         field = @schema.fields[error.column - 1]

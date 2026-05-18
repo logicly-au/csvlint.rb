@@ -34,12 +34,15 @@ module Csvlint
 
     private
 
-    def has_error_content?(err_content)
-      return false               if err_content.nil?
-      return err.content.empty?  if err_content.respond_to?(:empty?)
+    def has_error_data?(edata)
+      # So far we have noticed data that is either nil, strings or lists, and
+      # integer types, in both error.constraints and error.content, the expected
+      # inputs for this function.
+      return false         if edata.nil?
+      return edata.empty?  if edata.respond_to?(:empty?)
       # Defer to truthyness for other types. Ruby will give a true value
       # for zero-valued numbers, but we may want this behaviour too?
-      err.content
+      edata
     end
 
     def read_source(source)
@@ -118,8 +121,8 @@ module Csvlint
       end
       output_string += error.type.to_s
       output_string += ". #{location}"          unless location.empty?
-      output_string += ". #{error.content}"     if     has_error_content?(error.content)
-      output_string += ". #{error.constraints}" unless error.constraints&.empty?
+      output_string += ". #{error.content}"     if has_error_data?(error.content)
+      output_string += ". #{error.constraints}" if has_error_data?(error.constraints)
 
       puts Rainbow(output_string).color(color)
 
@@ -187,8 +190,8 @@ module Csvlint
         col: error.column
       }
 
-      h[:error_constraints] = error.constraints unless error.constraints&.empty?
-      h[:error_content]     = error.content     if     has_error_content?(error.content)
+      h[:error_constraints] = error.constraints if has_error_data?(error.constraints)
+      h[:error_content]     = error.content     if has_error_data?(error.content)
 
       if error.column && @schema && @schema.instance_of?(Csvlint::Schema) && @schema.fields[error.column - 1] != nil
         field = @schema.fields[error.column - 1]

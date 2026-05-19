@@ -35,9 +35,8 @@ module Csvlint
     private
 
     def has_error_data?(edata)
-      # So far we have noticed data that is either nil, strings or lists, and
-      # integer types, in both error.constraints and error.content, the expected
-      # inputs for this function.
+      # So far we have noticed error context types are either nil, strings or
+      # lists, and integer types.
       return false         if edata.nil?
       return edata.empty?  if edata.respond_to?(:empty?)
       # Defer to truthyness for other types. Ruby will give a true value
@@ -120,7 +119,7 @@ module Csvlint
         end
       end
       output_string += error.type.to_s
-      output_string += ". #{location}"          unless location.empty?
+      output_string += ". #{location}"          if has_error_data?(location)
       output_string += ". #{error.content}"     if has_error_data?(error.content)
       output_string += ". #{error.constraints}" if has_error_data?(error.constraints)
 

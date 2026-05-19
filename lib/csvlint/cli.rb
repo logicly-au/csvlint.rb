@@ -34,6 +34,16 @@ module Csvlint
 
     private
 
+    def has_error_data?(edata)
+      # So far we have noticed error context types are either nil, strings or
+      # lists, and integer types.
+      return false         if edata.nil?
+      return edata.empty?  if edata.respond_to?(:empty?)
+      # Defer to truthyness for other types. Ruby will give a true value
+      # for zero-valued numbers, but we may want this behaviour too?
+      edata
+    end
+
     def read_source(source)
       if source.nil?
         # If no source is present, try reading from stdin
@@ -89,7 +99,7 @@ module Csvlint
             return_error "#{source} not found"
           end
         end
-        valid &= validate_csv(source, schema, options[:dump_errors], nil, options[:werror])
+        valid &= validate_csv(source, schema, options[:dump_errors], options[:json], options[:werror])
       end
 
       exit 1 unless valid
@@ -109,8 +119,9 @@ module Csvlint
         end
       end
       output_string += error.type.to_s
-      output_string += ". #{location}" unless location.empty?
-      output_string += ". #{error.content}" if error.content
+      output_string += ". #{location}"          if has_error_data?(location)
+      output_string += ". #{error.content}"     if has_error_data?(error.content)
+      output_string += ". #{error.constraints}" if has_error_data?(error.constraints)
 
       puts Rainbow(output_string).color(color)
 
@@ -149,6 +160,8 @@ module Csvlint
 
       if json === true
         json = {
+          csv: csv,
+          is_valid: validator.valid?,
           validation: {
             state: validator.valid? ? "valid" : "invalid",
             errors: validator.errors.map { |v| hashify(v) },
@@ -156,7 +169,8 @@ module Csvlint
             info: validator.info_messages.map { |v| hashify(v) }
           }
         }.to_json
-        print json
+        # JSON-encoded error object per CSV source
+        print "#{json}\n"
       else
         puts "\r\n#{csv} is #{validator.valid? ? Rainbow("VALID").green : Rainbow("INVALID").red}"
         print_errors(validator.errors, dump)
@@ -174,6 +188,9 @@ module Csvlint
         row: error.row,
         col: error.column
       }
+
+      h[:error_constraints] = error.constraints if has_error_data?(error.constraints)
+      h[:error_content]     = error.content     if has_error_data?(error.content)
 
       if error.column && @schema && @schema.instance_of?(Csvlint::Schema) && @schema.fields[error.column - 1] != nil
         field = @schema.fields[error.column - 1]
